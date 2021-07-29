@@ -4,8 +4,8 @@
 // https://en.wikipedia.org/wiki/GeForce_30_series
 // https://en.wikipedia.org/wiki/CUDA
 
-#ifndef AMPERE_RTX3070_DEF_H
-#define AMPERE_RTX3070_DEF_H
+#ifndef AMPERE_A100_DEF_H
+#define AMPERE_A100_DEF_H
 
 #include "./common/common.h"
 #include "./common/deviceQuery.h"
@@ -16,7 +16,7 @@
 
 #define ISSUE_MODEL issue_model::single // single issue core or dual issue
 #define CORE_MODEL core_model::subcore  // subcore model or shared model
-#define DRAM_MODEL dram_model::GDDR6    // memory type
+#define DRAM_MODEL dram_model::HBM    // memory type
 #define WARP_SCHEDS_PER_SM 4            // number of warp schedulers per SM
 
 // number of SASS HMMA per 16x16 PTX WMMA for FP16 - FP32 accumlate operation
