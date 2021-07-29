@@ -1,4 +1,4 @@
-#include "tensor_lat_half.h"
+#include "tensor_sparse_lat_half.h"
 
 int main() {
 
