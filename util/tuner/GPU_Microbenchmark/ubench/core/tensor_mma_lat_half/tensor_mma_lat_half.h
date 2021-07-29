@@ -10,9 +10,9 @@
 #include <cstdlib>
 #include "../../../hw_def/hw_def.h"
 
-#include "tensor_mma1688_lat_half.h"
+#pragma once
 
-#define REPEAT_ITERS 4096*10
+#define REPEAT_ITERS 4096
 #define MMA_M 16
 #define MMA_N 8
 #define MMA_K 16
