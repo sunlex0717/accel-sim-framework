@@ -16,7 +16,7 @@
 #define MMA_N 8
 #define MMA_K 32
 
-using namespace nvcuda;
+// using namespace nvcuda;
 
 // template <class T, class R>
 // __global__ void tensor_latency(uint64_t *startClk, uint64_t *stopClk, T *a,

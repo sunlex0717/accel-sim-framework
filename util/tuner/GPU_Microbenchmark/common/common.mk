@@ -11,7 +11,7 @@ BIN_DIR := $(BASE_DIR)/../../../bin/
 GENCODE_SM80 ?= -gencode=arch=compute_80,code=\"sm_80,compute_80\"
 GENCODE_SM86 ?= -gencode=arch=compute_86,code=\"sm_86,compute_86\"
 
-CUOPTS =  $(GENCODE_ARCH) $(GENCODE_SM80) $(GENCODE_SM86)
+CUOPTS =  $(GENCODE_SM80) $(GENCODE_SM86)
 
 CC := nvcc
 
