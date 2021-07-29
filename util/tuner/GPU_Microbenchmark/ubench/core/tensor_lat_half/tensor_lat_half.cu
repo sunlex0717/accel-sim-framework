@@ -1,5 +1,6 @@
 #include "tensor_lat_half.h"
 
+
 int main() {
 
   intilizeDeviceProp(0);
