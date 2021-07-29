@@ -6,8 +6,8 @@ GENCODE_SM62 :=
 GENCODE_SM70 := 
 GENCODE_SM75 := 
 
-SRC = tensor_sparse_lat_half.cu
+SRC = tensor_mma_lat_half.cu
 
-EXE = tensor_sparse_lat_half
+EXE = tensor_mma_lat_half
 
 include ../../../common/common.mk
