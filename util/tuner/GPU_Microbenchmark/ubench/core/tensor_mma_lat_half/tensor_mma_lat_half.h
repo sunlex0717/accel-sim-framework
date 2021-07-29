@@ -349,12 +349,12 @@ __global__ void tensor1688_latency<half,half>(uint64_t *startClk, uint64_t *stop
   // warm-up
   asm(
       "mma.sync.aligned.m16n8k8.row.col.f16.f16.f16.f16 "
-      "{%0,%1}, {%2,%3}, {%4}, {%7,%8};\n"
+      "{%0,%1}, {%2,%3}, {%4}, {%5,%6};\n"
       : "=r"(D[0]), "=r"(D[1])
       : 
         "r"(A[0]), "r"(A[1]), 
         "r"(B[0]), 
-        "f"(C[0]), "f"(C[1]), 
+        "r"(C[0]), "r"(C[1]), 
   );
   // synchronize all threads
   asm volatile("bar.sync 0;");
@@ -373,13 +373,13 @@ __global__ void tensor1688_latency<half,half>(uint64_t *startClk, uint64_t *stop
     //       "r"(B[0]), "r"(B[1]),
     //       "r"(C[0]), "r"(C[1]));
     asm(
-      "mma.sync.aligned.m16n8k8.row.col.f16.f16.f16.f16 "
-      "{%0,%1}, {%2,%3}, {%4}, {%7,%8};\n"
-      : "=r"(D[0]), "=r"(D[1])
-      : 
-        "r"(A[0]), "r"(A[1]), 
-        "r"(B[0]), 
-        "f"(C[0]), "f"(C[1]), 
+        "mma.sync.aligned.m16n8k8.row.col.f16.f16.f16.f16 "
+        "{%0,%1}, {%2,%3}, {%4}, {%5,%6};\n"
+        : "=r"(D[0]), "=r"(D[1])
+        : 
+          "r"(A[0]), "r"(A[1]), 
+          "r"(B[0]), 
+          "r"(C[0]), "r"(C[1]), 
     );
   }
 
@@ -498,9 +498,9 @@ __global__ void tensor1688_latency<half,float>(uint64_t *startClk, uint64_t *sto
 
 
 template <class T, class R> float tensor1688_lat() {
-  MMA_M = 16;
-  MMA_N = 8;
-  MMA_K = 8;
+  int mma_m = 16;
+  int mma_n = 8;
+  int mma_k = 8;
 
   intilizeDeviceProp(0);
 
@@ -511,9 +511,9 @@ template <class T, class R> float tensor1688_lat() {
 
   uint64_t *startClk = (uint64_t *)malloc(TOTAL_THREADS * sizeof(uint64_t));
   uint64_t *stopClk = (uint64_t *)malloc(TOTAL_THREADS * sizeof(uint64_t));
-  T *data1 = (T *)malloc(MMA_M*MMA_K * sizeof(T));
-  T *data2 = (T *)malloc(MMA_N*MMA_K * sizeof(T));
-  R *res = (R *)malloc(MMA_M*MMA_N * sizeof(R));
+  T *data1 = (T *)malloc(mma_m*mma_k * sizeof(T));
+  T *data2 = (T *)malloc(mma_n*mma_k * sizeof(T));
+  R *res = (R *)malloc(mma_m*mma_n * sizeof(R));
 
   uint64_t *startClk_g;
   uint64_t *stopClk_g;
@@ -522,25 +522,25 @@ template <class T, class R> float tensor1688_lat() {
   R *res_g;
 
 
-  for (uint32_t i = 0; i < MMA_M*MMA_K; i++) {
+  for (uint32_t i = 0; i < mma_m*mma_k; i++) {
     data1[i] = (T)i;
   }
 
-  for (int i=0;i<MMA_N*MMA_K;i++){
+  for (int i=0;i<mma_n*mma_k;i++){
     data2[i] = (T)i;
   }
 
   gpuErrchk(cudaMalloc(&startClk_g, TOTAL_THREADS * sizeof(uint64_t)));
   gpuErrchk(cudaMalloc(&stopClk_g, TOTAL_THREADS * sizeof(uint64_t)));
-  gpuErrchk(cudaMalloc(&data1_g, MMA_M*MMA_K * sizeof(T)));
-  gpuErrchk(cudaMalloc(&data2_g, MMA_N*MMA_K * sizeof(T)));
-  gpuErrchk(cudaMalloc(&res_g, MMA_M*MMA_N * sizeof(R)));
+  gpuErrchk(cudaMalloc(&data1_g, mma_m*mma_k * sizeof(T)));
+  gpuErrchk(cudaMalloc(&data2_g, mma_n*mma_k * sizeof(T)));
+  gpuErrchk(cudaMalloc(&res_g, mma_m*mma_n * sizeof(R)));
 
 
   gpuErrchk(
-      cudaMemcpy(data1_g, data1, MMA_M*MMA_K * sizeof(T), cudaMemcpyHostToDevice));
+      cudaMemcpy(data1_g, data1, mma_m*mma_k * sizeof(T), cudaMemcpyHostToDevice));
   gpuErrchk(
-      cudaMemcpy(data2_g, data2, MMA_N*MMA_K * sizeof(T), cudaMemcpyHostToDevice));
+      cudaMemcpy(data2_g, data2, mma_n*mma_k * sizeof(T), cudaMemcpyHostToDevice));
 
 
   // gpuErrchk(
