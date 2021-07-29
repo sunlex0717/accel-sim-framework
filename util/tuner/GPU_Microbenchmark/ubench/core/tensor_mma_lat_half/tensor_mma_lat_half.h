@@ -354,7 +354,7 @@ __global__ void tensor1688_latency<half,half>(uint64_t *startClk, uint64_t *stop
       : 
         "r"(A[0]), "r"(A[1]), 
         "r"(B[0]), 
-        "r"(C[0]), "r"(C[1]), 
+        "r"(C[0]), "r"(C[1])
   );
   // synchronize all threads
   asm volatile("bar.sync 0;");
@@ -377,9 +377,9 @@ __global__ void tensor1688_latency<half,half>(uint64_t *startClk, uint64_t *stop
         "{%0,%1}, {%2,%3}, {%4}, {%5,%6};\n"
         : "=r"(D[0]), "=r"(D[1])
         : 
-          "r"(A[0]), "r"(A[1]), 
+          "r"(A[0]), "r"(A[1]),
           "r"(B[0]), 
-          "r"(C[0]), "r"(C[1]), 
+          "r"(C[0]), "r"(C[1])
     );
   }
 
