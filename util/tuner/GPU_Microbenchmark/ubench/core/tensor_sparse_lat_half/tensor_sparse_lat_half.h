@@ -112,6 +112,15 @@ __global__ void tensor_latency<half,half>(uint64_t *startClk, uint64_t *stopClk,
   uint32_t *D = C; 
   uint32_t const E = frag_C;
 
+
+  //warm-up
+  asm volatile(
+        "mma.sp.sync.aligned.m16n8k32.row.col.f16.f16.f16.f16 {%0,%1}, "
+        "{%2,%3,%4,%5}, {%6,%7,%8,%9}, {%10,%11}, %12, 0x0;\n"
+        : "=r"(D[0]), "=r"(D[1])
+        : "r"(A[0]), "r"(A[1]), "r"(A[2]), "r"(A[3]), "r"(B[0]), "r"(B[1]),
+          "r"(B[2]), "r"(B[3]), "r"(C[0]), "r"(C[1]), 
+          "r"(E));
   // synchronize all threads
   asm volatile("bar.sync 0;");
 
@@ -197,6 +206,14 @@ __global__ void tensor_latency<half,float>(uint64_t *startClk, uint64_t *stopClk
   float *D = C; 
   uint32_t const E = frag_C;
 
+  //warm up
+  asm volatile(
+        "mma.sp.sync.aligned.m16n8k32.row.col.f32.f16.f16.f32 {%0,%1,%2,%3}, "
+        "{%4,%5,%6,%7}, {%8,%9,%10,%11}, {%12,%13,%14,%15}, %16, 0x0;\n"
+        : "=f"(D[0]), "=f"(D[1]), "=f"(D[2]), "=f"(D[3])
+        : "r"(A[0]), "r"(A[1]), "r"(A[2]), "r"(A[3]), "r"(B[0]), "r"(B[1]),
+          "r"(B[2]), "r"(B[3]), "f"(C[0]), "f"(C[1]), "f"(C[2]), "f"(C[3]),
+          "r"(E));
   // synchronize all threads
   asm volatile("bar.sync 0;");
 

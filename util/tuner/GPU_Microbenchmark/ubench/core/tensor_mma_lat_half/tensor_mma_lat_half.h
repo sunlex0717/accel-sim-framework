@@ -11,7 +11,7 @@
 #include "../../../hw_def/hw_def.h"
 
 
-#define REPEAT_ITERS 4096
+#define REPEAT_ITERS 4096*10
 #define MMA_M 16
 #define MMA_N 8
 #define MMA_K 16
@@ -89,6 +89,13 @@ __global__ void tensor_latency<half,half>(uint64_t *startClk, uint64_t *stopClk,
   uint32_t *C = reinterpret_cast<uint32_t *>(&frag_D[0]);
   uint32_t *D = C; 
 
+  
+  // warm-up
+  asm volatile("mma.sync.aligned.m16n8k16.row.col.f16.f16.f16.f16 {%0,%1}, {%2,%3,%4,%5}, {%6,%7}, {%8,%9};\n"
+        : "=r"(D[0]), "=r"(D[1])
+        : "r"(A[0]), "r"(A[1]), "r"(A[2]), "r"(A[3]),
+          "r"(B[0]), "r"(B[1]),
+          "r"(C[0]), "r"(C[1]));
   // synchronize all threads
   asm volatile("bar.sync 0;");
 
@@ -96,6 +103,8 @@ __global__ void tensor_latency<half,half>(uint64_t *startClk, uint64_t *stopClk,
   uint64_t start = 0;
   uint64_t stop = 0;
   asm volatile("mov.u64 %0, %%clock64;" : "=l"(start)::"memory");
+
+
 
   for (int j = 0; j < REPEAT_ITERS; ++j) {
     asm volatile("mma.sync.aligned.m16n8k16.row.col.f16.f16.f16.f16 {%0,%1}, {%2,%3,%4,%5}, {%6,%7}, {%8,%9};\n"
@@ -167,7 +176,13 @@ __global__ void tensor_latency<half,float>(uint64_t *startClk, uint64_t *stopClk
   uint32_t const *B = reinterpret_cast<uint32_t const *>(&frag_B[0]);//?
   float *C = reinterpret_cast<float *>(&frag_D[0]);
   float *D = C; 
-
+  //warm up
+  asm volatile(
+        "mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32  {%0,%1,%2,%3}, {%4,%5,%6,%7}, {%8,%9}, "
+        "{%10,%11,%12,%13};\n"
+        : "=f"(D[0]), "=f"(D[1]), "=f"(D[2]), "=f"(D[3])
+        : "r"(A[0]), "r"(A[1]), "r"(A[2]), "r"(A[3]), "r"(B[0]), "r"(B[1]),
+          "f"(C[0]), "f"(C[1]), "f"(C[2]), "f"(C[3]));
   // synchronize all threads
   asm volatile("bar.sync 0;");
 
