@@ -216,9 +216,6 @@ template <class T, class R> float tensor_lat() {
   T *data2 = (T *)malloc(MMA_N*MMA_K * sizeof(T));
   R *res = (R *)malloc(MMA_M*MMA_N * sizeof(R));
 
-
-  initialize_fake_metadata_2_4(meta_e,MMA_M,MMA_K);
-
   uint64_t *startClk_g;
   uint64_t *stopClk_g;
   T *data1_g;
