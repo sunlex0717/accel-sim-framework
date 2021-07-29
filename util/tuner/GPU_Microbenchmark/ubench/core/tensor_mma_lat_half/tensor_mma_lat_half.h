@@ -12,7 +12,7 @@
 
 #pragma once
 
-#define REPEAT_ITERS 4096
+#define REPEAT_ITERS 4096*10
 #define MMA_M 16
 #define MMA_N 8
 #define MMA_K 16
