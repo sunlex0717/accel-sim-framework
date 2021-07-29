@@ -14,26 +14,12 @@
 #define REPEAT_ITERS 4096*10
 #define MMA_M 16
 #define MMA_N 8
-#define MMA_K 16
+#define MMA_K 8
 
 
-__forceinline__ __device__ unsigned lane_id()
-{
-    unsigned ret; 
-    asm volatile ("mov.u32 %0, %laneid;" : "=r"(ret));
-    return ret;
-}
-
-__forceinline__ __device__ unsigned warp_id()
-{
-    // this is not equal to threadIdx.x / 32
-    unsigned ret; 
-    asm volatile ("mov.u32 %0, %warpid;" : "=r"(ret));
-    return ret;
-}
 
 template <typename T, typename R>
-__global__ void tensor_latency(uint64_t *startClk, uint64_t *stopClk, T *input_A,
+__global__ void tensor1688_latency(uint64_t *startClk, uint64_t *stopClk, T *input_A,
                                T *input_B, R *output_D ){
 
   printf("no implementattion");
@@ -44,7 +30,7 @@ __global__ void tensor_latency(uint64_t *startClk, uint64_t *stopClk, T *input_A
 
 
 template <>
-__global__ void tensor_latency<half,half>(uint64_t *startClk, uint64_t *stopClk, half *input_A,
+__global__ void tensor1688_latency<half,half>(uint64_t *startClk, uint64_t *stopClk, half *input_A,
                                half *input_B ,half *output_D ) {
 
   int gid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -66,8 +52,8 @@ __global__ void tensor_latency<half,half>(uint64_t *startClk, uint64_t *stopClk,
     }
   }
     /** step 1: create register for each thread **/
-  half frag_A[8]; // four .f16x2 registers, 8 half elements, 
-  half frag_B[4]; // two .f16x2 registers, 4 half  elements
+  half frag_A[4]; // two .f16x2 registers, 8 half elements, 
+  half frag_B[2]; // one .f16x2 registers, 4 half  elements
   half frag_D[4]; //result(half) two .fp16 registers , 4 half elements
 
   /** step 2: load data to registers via ldmatrix inst **/
@@ -75,11 +61,11 @@ __global__ void tensor_latency<half,half>(uint64_t *startClk, uint64_t *stopClk,
   // Note for test, we just use some random values,we do not care correctness at this moment
   //#pragma unroll 1
   // fake load
-  for(int i = 0;i<8 ;i++){
+  for(int i = 0;i<4 ;i++){
     frag_A[i] = smem_buffer_A[i+lane_id()];
     
   }
-  for(int i =0;i<4;i++){
+  for(int i =0;i<2;i++){
     frag_B[i] = smem_buffer_B[i+lane_id()];
   }
 
@@ -91,11 +77,15 @@ __global__ void tensor_latency<half,half>(uint64_t *startClk, uint64_t *stopClk,
 
   
   // warm-up
-  asm volatile("mma.sync.aligned.m16n8k16.row.col.f16.f16.f16.f16 {%0,%1}, {%2,%3,%4,%5}, {%6,%7}, {%8,%9};\n"
-        : "=r"(D[0]), "=r"(D[1])
-        : "r"(A[0]), "r"(A[1]), "r"(A[2]), "r"(A[3]),
-          "r"(B[0]), "r"(B[1]),
-          "r"(C[0]), "r"(C[1]));
+  asm(
+      "mma.sync.aligned.m16n8k8.row.col.f16.f16.f16.f16 "
+      "{%0,%1}, {%2,%3}, {%4}, {%7,%8};\n"
+      : "=r"(D[0]), "=r"(D[1])
+      : 
+        "r"(A[0]), "r"(A[1]), 
+        "r"(B[0]), 
+        "f"(C[0]), "f"(C[1]), 
+  );
   // synchronize all threads
   asm volatile("bar.sync 0;");
 
@@ -107,11 +97,20 @@ __global__ void tensor_latency<half,half>(uint64_t *startClk, uint64_t *stopClk,
 
 
   for (int j = 0; j < REPEAT_ITERS; ++j) {
-    asm volatile("mma.sync.aligned.m16n8k16.row.col.f16.f16.f16.f16 {%0,%1}, {%2,%3,%4,%5}, {%6,%7}, {%8,%9};\n"
-        : "=r"(D[0]), "=r"(D[1])
-        : "r"(A[0]), "r"(A[1]), "r"(A[2]), "r"(A[3]),
-          "r"(B[0]), "r"(B[1]),
-          "r"(C[0]), "r"(C[1]));
+    // asm volatile("mma.sync.aligned.m16n8k16.row.col.f16.f16.f16.f16 {%0,%1}, {%2,%3,%4,%5}, {%6,%7}, {%8,%9};\n"
+    //     : "=r"(D[0]), "=r"(D[1])
+    //     : "r"(A[0]), "r"(A[1]), "r"(A[2]), "r"(A[3]),
+    //       "r"(B[0]), "r"(B[1]),
+    //       "r"(C[0]), "r"(C[1]));
+    asm(
+      "mma.sync.aligned.m16n8k8.row.col.f16.f16.f16.f16 "
+      "{%0,%1}, {%2,%3}, {%4}, {%7,%8};\n"
+      : "=r"(D[0]), "=r"(D[1])
+      : 
+        "r"(A[0]), "r"(A[1]), 
+        "r"(B[0]), 
+        "f"(C[0]), "f"(C[1]), 
+    );
   }
 
   // synchronize all threads
@@ -132,7 +131,7 @@ __global__ void tensor_latency<half,half>(uint64_t *startClk, uint64_t *stopClk,
 
 
 template <>
-__global__ void tensor_latency<half,float>(uint64_t *startClk, uint64_t *stopClk, half *input_A,
+__global__ void tensor1688_latency<half,float>(uint64_t *startClk, uint64_t *stopClk, half *input_A,
                                half *input_B, float *output_D ) {
 
   int gid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -154,8 +153,8 @@ __global__ void tensor_latency<half,float>(uint64_t *startClk, uint64_t *stopClk
     }
   }
     /** step 1: create register for each thread **/
-  half frag_A[8]; // four .f16x2 registers, 8 half elements, 
-  half frag_B[4];  // two .f16x2 registers, 4 half  elements
+  half frag_A[4]; // two .f16x2 registers, 8 half elements, 
+  half frag_B[2];  // one .f16x2 registers, 4 half  elements
   float frag_D[4]; //result(fp32) 4 f32 registers
 
 
@@ -164,11 +163,11 @@ __global__ void tensor_latency<half,float>(uint64_t *startClk, uint64_t *stopClk
   // Note for test, we just use some random values,we do not care correctness at this moment
   //#pragma unroll 1
   // fake load
-  for(int i = 0;i<8 ;i++){
+  for(int i = 0;i<4 ;i++){
     frag_A[i] = smem_buffer_A[i+lane_id()];
   }
 
-  for(int i =0;i<4;i++){
+  for(int i =0;i<2;i++){
     frag_B[i] = smem_buffer_B[i+lane_id()];
   }
   //TODO: cast half to 
@@ -177,12 +176,15 @@ __global__ void tensor_latency<half,float>(uint64_t *startClk, uint64_t *stopClk
   float *C = reinterpret_cast<float *>(&frag_D[0]);
   float *D = C; 
   //warm up
-  asm volatile(
-        "mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32  {%0,%1,%2,%3}, {%4,%5,%6,%7}, {%8,%9}, "
-        "{%10,%11,%12,%13};\n"
-        : "=f"(D[0]), "=f"(D[1]), "=f"(D[2]), "=f"(D[3])
-        : "r"(A[0]), "r"(A[1]), "r"(A[2]), "r"(A[3]), "r"(B[0]), "r"(B[1]),
-          "f"(C[0]), "f"(C[1]), "f"(C[2]), "f"(C[3]));
+  asm(
+      "mma.sync.aligned.m16n8k8.row.col.f32.f16.f16.f32 "
+      "{%0,%1,%2,%3}, {%4,%5}, {%6}, {%7,%8,%9,%10};\n"
+      : "=f"(D[0]), "=f"(D[1]), "=f"(D[2]), "=f"(D[3])
+      : 
+        "r"(A[0]), "r"(A[1]), 
+        "r"(B[0]), 
+        "f"(C[0]), "f"(C[1]), "f"(C[2]), "f"(C[3])
+  );
   // synchronize all threads
   asm volatile("bar.sync 0;");
 
@@ -192,12 +194,21 @@ __global__ void tensor_latency<half,float>(uint64_t *startClk, uint64_t *stopClk
   asm volatile("mov.u64 %0, %%clock64;" : "=l"(start)::"memory");
 
   for (int j = 0; j < REPEAT_ITERS; ++j) {
-    asm volatile(
-        "mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32  {%0,%1,%2,%3}, {%4,%5,%6,%7}, {%8,%9}, "
-        "{%10,%11,%12,%13};\n"
+    // asm volatile(
+    //     "mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32  {%0,%1,%2,%3}, {%4,%5,%6,%7}, {%8,%9}, "
+    //     "{%10,%11,%12,%13};\n"
+    //     : "=f"(D[0]), "=f"(D[1]), "=f"(D[2]), "=f"(D[3])
+    //     : "r"(A[0]), "r"(A[1]), "r"(A[2]), "r"(A[3]), "r"(B[0]), "r"(B[1]),
+    //       "f"(C[0]), "f"(C[1]), "f"(C[2]), "f"(C[3]));
+    asm(
+        "mma.sync.aligned.m16n8k8.row.col.f32.f16.f16.f32 "
+        "{%0,%1,%2,%3}, {%4,%5}, {%6}, {%7,%8,%9,%10};\n"
         : "=f"(D[0]), "=f"(D[1]), "=f"(D[2]), "=f"(D[3])
-        : "r"(A[0]), "r"(A[1]), "r"(A[2]), "r"(A[3]), "r"(B[0]), "r"(B[1]),
-          "f"(C[0]), "f"(C[1]), "f"(C[2]), "f"(C[3]));
+        : 
+          "r"(A[0]), "r"(A[1]), 
+          "r"(B[0]), 
+          "f"(C[0]), "f"(C[1]), "f"(C[2]), "f"(C[3])
+    );
   }
 
   // synchronize all threads
@@ -216,7 +227,10 @@ __global__ void tensor_latency<half,float>(uint64_t *startClk, uint64_t *stopClk
 
 
 
-template <class T, class R> float tensor_lat() {
+template <class T, class R> float tensor1688_lat() {
+  MMA_M = 16;
+  MMA_N = 8;
+  MMA_K = 8;
 
   intilizeDeviceProp(0);
 
@@ -262,7 +276,7 @@ template <class T, class R> float tensor_lat() {
   // gpuErrchk(
   //     cudaMemcpy(data2_g, data2, MMA_N*MMA_K * sizeof(T), cudaMemcpyHostToDevice));
 
-  tensor_latency<T, R><<<BLOCKS_NUM, THREADS_PER_BLOCK>>>(
+  tensor1688_latency<T, R><<<BLOCKS_NUM, THREADS_PER_BLOCK>>>(
       startClk_g, stopClk_g, data1_g, data2_g,res_g);
   gpuErrchk(cudaPeekAtLastError());
 
