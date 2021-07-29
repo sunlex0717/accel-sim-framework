@@ -74,16 +74,24 @@ __forceinline__ __device__ unsigned warp_id()
     return ret;
 }
 
+template <typename T, typename R>
+__global__ void tensor_latency(uint64_t *startClk, uint64_t *stopClk, T *input_A,
+                               T *input_B, uint32_t *input_E ,R *output_D ){
 
-template <class half, class float>
-__global__ void tensor_latency(uint64_t *startClk, uint64_t *stopClk, half *input_A,
-                               half *input_B, uint32_t *input_E ,float *output_D, ) {
+printf("no implementattion");
+
+}
+
+
+template <>
+__global__ void tensor_latency<half,float>(uint64_t *startClk, uint64_t *stopClk, half *input_A,
+                               half *input_B, uint32_t *input_E ,float *output_D ) {
 
   int gid = blockIdx.x * blockDim.x + threadIdx.x;
   /** step 0: create shared memory buffer, this step is  necessary because we need to use ldmatrix instruction which can only load from shared mem **/
    __shared__ half smem_buffer_A[MMA_M*MMA_K/2]; // wmma_m * wmma_k/2 : Sparse Matrix A
    __shared__ half smem_buffer_B[MMA_N*MMA_K]; // wmma_n * wmma_k : Dense Matrix B
-   __shared__ uint32_t smem_buffer_E[MMA_M*MMA_K/16]       //e: uint32_t
+   __shared__ uint32_t smem_buffer_E[MMA_M*MMA_K/16];       //e: uint32_t
   // register T result = 0;
 
 
@@ -122,7 +130,8 @@ __global__ void tensor_latency(uint64_t *startClk, uint64_t *stopClk, half *inpu
 
   uint32_t const *A = reinterpret_cast<uint32_t const *>(&frag_A[0]);
   uint32_t const *B = reinterpret_cast<uint32_t const *>(&frag_B[0]);//?
-  uint32_t const *C = reinterpret_cast<uint32_t const *>(&frag_D[0]);
+  float *C = reinterpret_cast<float *>(&frag_D[0]);
+  float *D = C; 
   uint32_t const E = frag_C;
   // wmma::fragment<wmma::matrix_a, 16, 16, 16, T, wmma::row_major> a_frag;
   // wmma::fragment<wmma::matrix_b, 16, 16, 16, T, wmma::col_major> b_frag;
