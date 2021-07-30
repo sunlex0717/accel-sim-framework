@@ -20,7 +20,11 @@ int main() {
   std::cout << "\nmma1688 FP16 operand, FP16 accumalte:\n";
   tensor1688_lat<half, half>();
 
+  std::cout << "\nmma884 FP16 operand, FP32 accumalte:\n";
+  tensor884_lat<half, float>();
 
+  std::cout << "\nmma884 FP16 operand, FP16 accumalte:\n";
+  tensor884_lat<half, half>();
   
   // tensor_lat<char,int>();
 
