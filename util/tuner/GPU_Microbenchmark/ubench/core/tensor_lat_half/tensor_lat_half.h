@@ -37,7 +37,7 @@ __global__ void tensor_latency(uint64_t *startClk, uint64_t *stopClk, T *a,
   // start timing
   uint64_t start = 0;
   asm volatile("mov.u64 %0, %%clock64;" : "=l"(start)::"memory");
-  #pragma unroll
+  
   for (int j = 0; j < REPEAT_ITERS; ++j) {
     wmma::mma_sync(c_frag, a_frag, b_frag, c_frag);
   }
