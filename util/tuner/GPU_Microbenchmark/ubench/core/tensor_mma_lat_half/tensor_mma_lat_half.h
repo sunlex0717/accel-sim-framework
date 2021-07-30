@@ -614,9 +614,9 @@ __global__ void tensor884_latency<half,float>(uint64_t *startClk, uint64_t *stop
   //warm up
   asm volatile(
     "mma.sync.aligned.m8n8k4.col.col.f16.f16.f16.f16 {%0,%1,%2,%3,%4,%5,%6,%7}, {%8,%9}, {%10,%11}, {%12,%13,%14,%15,%16,%17};\n"
-    : "=r"(D[0]), "=r"(D[1]), "=r"(D[2]), "=r"(D[3]),"=r"(D[4]),"=r"(D[5]),"=r"(D[6]),"=r"(D[7])
+    : "=f"(D[0]), "=f"(D[1]), "=f"(D[2]), "=f"(D[3]),"=f"(D[4]),"=f"(D[5]),"=f"(D[6]),"=f"(D[7])
     : "r"(A[0]), "r"(A[1]), "r"(B[0]), "r"(B[1]), 
-      "r"(C[0]), "r"(C[1]), "r"(C[2]), "r"(C[3]),"r"(C[4]),"r"(C[5]),"r"(C[6]),"r"(C[7])
+      "f"(C[0]), "f"(C[1]), "f"(C[2]), "f"(C[3]),"f"(C[4]),"f"(C[5]),"f"(C[6]),"f"(C[7])
     );
   // synchronize all threads
   asm volatile("bar.sync 0;");
@@ -629,9 +629,9 @@ __global__ void tensor884_latency<half,float>(uint64_t *startClk, uint64_t *stop
   for (int j = 0; j < REPEAT_ITERS; ++j) {
   asm volatile(
     "mma.sync.aligned.m8n8k4.col.col.f16.f16.f16.f16 {%0,%1,%2,%3,%4,%5,%6,%7}, {%8,%9}, {%10,%11}, {%12,%13,%14,%15,%16,%17};\n"
-    : "=r"(D[0]), "=r"(D[1]), "=r"(D[2]), "=r"(D[3]),"=r"(D[4]),"=r"(D[5]),"=r"(D[6]),"=r"(D[7])
+    : "=f"(D[0]), "=f"(D[1]), "=f"(D[2]), "=f"(D[3]),"=f"(D[4]),"=f"(D[5]),"=f"(D[6]),"=f"(D[7])
     : "r"(A[0]), "r"(A[1]), "r"(B[0]), "r"(B[1]), 
-      "r"(C[0]), "r"(C[1]), "r"(C[2]), "r"(C[3]),"r"(C[4]),"r"(C[5]),"r"(C[6]),"r"(C[7])
+      "f"(C[0]), "f"(C[1]), "f"(C[2]), "f"(C[3]),"f"(C[4]),"f"(C[5]),"f"(C[6]),"f"(C[7])
     );
   }
 
