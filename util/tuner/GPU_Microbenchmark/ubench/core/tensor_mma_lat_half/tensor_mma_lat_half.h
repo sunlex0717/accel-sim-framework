@@ -12,7 +12,7 @@
 
 #pragma once
 
-#define REPEAT_ITERS 4096*10
+#define REPEAT_ITERS 2048
 #define MMA_M 16
 #define MMA_N 8
 #define MMA_K 16
@@ -90,7 +90,9 @@ __global__ void tensor_latency<half,half>(uint64_t *startClk, uint64_t *stopClk,
   uint32_t *C = reinterpret_cast<uint32_t *>(&frag_D[0]);
   uint32_t *D = C; 
 
-  
+    // start timing
+  uint64_t start = 0;
+  uint64_t stop = 0;
   // warm-up
   asm volatile("mma.sync.aligned.m16n8k16.row.col.f16.f16.f16.f16 {%0,%1}, {%2,%3,%4,%5}, {%6,%7}, {%8,%9};\n"
         : "=r"(D[0]), "=r"(D[1])
@@ -100,13 +102,11 @@ __global__ void tensor_latency<half,half>(uint64_t *startClk, uint64_t *stopClk,
   // synchronize all threads
   asm volatile("bar.sync 0;");
 
-  // start timing
-  uint64_t start = 0;
-  uint64_t stop = 0;
+
   asm volatile("mov.u64 %0, %%clock64;" : "=l"(start)::"memory");
 
 
-
+  #pragma unroll
   for (int j = 0; j < REPEAT_ITERS; ++j) {
     asm volatile("mma.sync.aligned.m16n8k16.row.col.f16.f16.f16.f16 {%0,%1}, {%2,%3,%4,%5}, {%6,%7}, {%8,%9};\n"
         : "=r"(D[0]), "=r"(D[1])
@@ -191,7 +191,7 @@ __global__ void tensor_latency<half,float>(uint64_t *startClk, uint64_t *stopClk
   uint64_t start = 0;
   uint64_t stop = 0;
   asm volatile("mov.u64 %0, %%clock64;" : "=l"(start)::"memory");
-
+  #pragma unroll
   for (int j = 0; j < REPEAT_ITERS; ++j) {
     asm volatile(
         "mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32  {%0,%1,%2,%3}, {%4,%5,%6,%7}, {%8,%9}, "
@@ -363,7 +363,7 @@ __global__ void tensor1688_latency<half,half>(uint64_t *startClk, uint64_t *stop
   uint64_t start = 0;
   uint64_t stop = 0;
   asm volatile("mov.u64 %0, %%clock64;" : "=l"(start)::"memory");
-
+  #pragma unroll
   for (int j = 0; j < REPEAT_ITERS; ++j) {
     asm(
         "mma.sync.aligned.m16n8k8.row.col.f16.f16.f16.f16 "
@@ -455,7 +455,7 @@ __global__ void tensor1688_latency<half,float>(uint64_t *startClk, uint64_t *sto
   uint64_t start = 0;
   uint64_t stop = 0;
   asm volatile("mov.u64 %0, %%clock64;" : "=l"(start)::"memory");
-
+  #pragma unroll
   for (int j = 0; j < REPEAT_ITERS; ++j) {
     asm(
         "mma.sync.aligned.m16n8k8.row.col.f32.f16.f16.f32 "
