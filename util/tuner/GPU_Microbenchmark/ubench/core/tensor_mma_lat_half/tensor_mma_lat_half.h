@@ -784,7 +784,7 @@ template <class T, class R> float tensor884_lat() {
   // gpuErrchk(
   //     cudaMemcpy(data2_g, data2, MMA_N*MMA_K * sizeof(T), cudaMemcpyHostToDevice));
 
-  tensor1688_latency<T, R><<<BLOCKS_NUM, THREADS_PER_BLOCK>>>(
+  tensor884_latency<T, R><<<BLOCKS_NUM, THREADS_PER_BLOCK>>>(
       startClk_g, stopClk_g, data1_g, data2_g,res_g);
   gpuErrchk(cudaPeekAtLastError());
 
