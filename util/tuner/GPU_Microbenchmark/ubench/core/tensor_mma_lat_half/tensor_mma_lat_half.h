@@ -695,7 +695,7 @@ __global__ void tensor884_latency<half,half>(uint64_t *startClk, uint64_t *stopC
   //TODO: cast half to 
   uint32_t const *A = reinterpret_cast<uint32_t const *>(&frag_A[0]);
   uint32_t const *B = reinterpret_cast<uint32_t const *>(&frag_B[0]);//?
-  uint32_t *C = reinterpret_cast<float *>(&frag_D[0]);
+  uint32_t *C = reinterpret_cast<uint32_t *>(&frag_D[0]);
   uint32_t *D = C; 
   //warm up
     asm volatile("mma.sync.aligned.m8n8k4.col.col.f16.f16.f16.f16 {%0,%1,%2,%3}, {%4,%5}, {%6,%7}, {%8,%9,%10,%11};\n"
